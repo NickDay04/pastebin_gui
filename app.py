@@ -1,6 +1,5 @@
 from tkinter import filedialog
 from tkinter import *
-import subprocess as sp
 import webbrowser
 import os
 import requests
@@ -158,8 +157,34 @@ def pasteFun():
             r = requests.post("https://pastebin.com/api/api_post.php", data=data) # Submits the post
             url = r.text # Stores the response
 
-            # TODO: Handle non-url responses from server
-            urlLabel["text"] = url # Sets the text of urlLabel to the response from the server
+            # Handles non-url responses from the server         
+            if url == "Bad API request, invalid api_dev_key":
+
+                urlLabel["text"] = "Invalid developer key"
+
+            elif url == "Bad API request, maximum number of 25 unlisted pastes for your free account":
+
+                urlLabel["text"] = "You have reached the maximum number of unlisted pastes"
+            
+            elif url == "Bad API request, maximum number of 10 private pastes for your free account":
+
+                urlLabel["text"] = "You have reaced the maximum number of private pastes"
+            
+            elif url == "Bad API request, api_paste_code was empty":
+
+                urlLabel["text"] = "Your paste is empty"
+            
+            elif url == "Bad API request, maximum paste file size exceeded":
+
+                urlLabel["text"] = "Your file size exceeds the maximum file size"
+
+            elif url == "Bad API request, invalid api_paste_format":
+
+                urlLabel["text"] = "Invalid paste format"
+
+            else:
+
+                urlLabel["text"] = url
 
     # Lambda wasn't working so I made another function to handle one specific hyperlink
     def pasteTypeHyperlinkFun(event):
@@ -254,37 +279,19 @@ def getFun():
     
     def getPasteFun(filePath):
 
-        # TODO: swap this with api (using https://pastebin.com/raw/KEY) instead of using cmd
-        pasteContent = sp.getoutput(f"pastebin get {keyEntry.get()}") # Uses the cmd to return the paste (given the paste key)
-
-        print(filePath)
+        response = requests.get(f"https://pastebin.com/raw/{keyEntry.get()}")
+        pasteContent = response.text
 
         with open(os.path.join(filePath, fileNameEntry.get() + ".txt"), "w+") as outputTextFile:
 
             outputTextFile.write(pasteContent) # Writes the paste to a text file
 
-    # Opens the user info
-    with open(path, "r+") as userInfo:
-
-        userInfoList = userInfo.readlines()
-    
-    keyVar = StringVar()
-
-    # Try/except statement used in case user hasn't registered
-    try:
-
-        keyVar.set(userInfoList[2])
-    
-    except:
-
-        keyVar.set("")
 
     keyLabel = Label(getWin, text="Key:")
     keyLabel.grid(row=0, column=0)
 
     keyEntry = Entry(getWin)
     keyEntry.grid(row=0, column=1)
-    keyEntry["textvariable"] = keyVar # Auto fill key box
 
     fileNameLabel = Label(getWin, text="File name:")
     fileNameLabel.grid(row=1, column=0)
