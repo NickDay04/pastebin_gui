@@ -47,7 +47,7 @@ def registerFun():
     
     def registerFun():
 
-        writeString = f"{usernameEntry.get()}\n{passwordEntry.get()}\n{devKeyEntry.get()}"
+        writeString = f"{usernameEntry.get().strip()}\n{passwordEntry.get().strip()}\n{devKeyEntry.get().strip()}"
 
         with open(path, "w+") as userInfo:
 
@@ -143,7 +143,7 @@ def pasteFun():
             # Assembles all the data to submit a new paste
             data = {
                 'api_option': 'paste',
-                'api_dev_key': userInfoList[2],
+                'api_dev_key': userInfoList[2].strip(),
                 'api_paste_code': selectFileFun.pasteContent,
                 'api_paste_name': pasteNameEntry.get(),
                 'api_paste_expire_date': expiryDictBE[expiryVar.get()],
@@ -185,6 +185,9 @@ def pasteFun():
             else:
 
                 urlLabel["text"] = url
+                urlLabel["fg"] = "blue"
+                urlLabel["cursor"] = "hand2"
+                urlLabel.bind("<Button-1>", callback) # Hyperlink to open the url if the paste was sucessful
 
     # Lambda wasn't working so I made another function to handle one specific hyperlink
     def pasteTypeHyperlinkFun(event):
@@ -261,9 +264,9 @@ def pasteFun():
         expiryList.append(Checkbutton(pasteWin, onvalue=i, variable= expiryVar, text=expiryDictFE[i]))
         expiryList[i].grid(row=i+4, column=1, sticky="W")
     
-    urlLabel = Label(pasteWin, text="", fg="blue", cursor="hand2")
+    urlLabel = Label(pasteWin, text="", fg="black")
     urlLabel.grid(row=3, column=2, rowspan=6, columnspan=2)
-    urlLabel.bind("<Button-1>", callback) # Hyperlink to open the url if the paste was sucessful
+    
 
 
 # Opens window to get a paste
