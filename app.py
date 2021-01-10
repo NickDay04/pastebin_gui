@@ -5,27 +5,33 @@ import webbrowser
 import os
 import requests
 
-# output = sp.getoutput("pastebin get VEA8sQXN") - return "test"
-
-path = r"C:\PastebinGUI"
+# Make the folder where the user info is stored
+path = os.getenv("APPDATA")
+path = os.path.join(path, "PastebinGUI")
 try:
     os.mkdir(path)
 except:
     pass
+
+# Update path to involve the file
+path = os.path.join(path, "userInfo.txt")
 
 global pasteContent
 global url
 pasteContent = ""
 url = ""
 
+# Function holding the register window
 def registerFun():
 
     registerWin = Toplevel(root)
 
+    # Function holding the help window
     def devKeyHelpFun():
 
         devKeyHelpWin = Toplevel(registerWin)
 
+        # This function opens a url in the webbrowser (used for hyperlinks)
         def callback(url):
             webbrowser.open_new(url)
 
@@ -34,7 +40,7 @@ def registerFun():
 
         hyperlink = Label(devKeyHelpWin, text="here", fg="blue", cursor="hand2")
         hyperlink.pack()
-        hyperlink.bind("<Button-1>", lambda e: callback("https://pastebin.com/doc_api#1"))
+        hyperlink.bind("<Button-1>", lambda e: callback("https://pastebin.com/doc_api#1")) # This functions as a hyperlink
 
         infoLabel2 = Label(devKeyHelpWin, text="and the key should be near the top (ensuring you are logged in).")
         infoLabel2.pack()
@@ -42,11 +48,9 @@ def registerFun():
     
     def registerFun():
 
-        # key = PastebinAPI.user_details(devKeyEntry.get(), usernameEntry.get(), passwordEntry.get())
-        # \n{key}
         writeString = f"{usernameEntry.get()}\n{passwordEntry.get()}\n{devKeyEntry.get()}"
 
-        with open(r"C:\PastebinGUI\userinfo.txt", "w+") as userInfo:
+        with open(path, "w+") as userInfo:
 
             userInfo.write(writeString)
         
@@ -56,9 +60,10 @@ def registerFun():
     passwordStringVar = StringVar()
     devKeyStringVar = StringVar()
 
+    # I used a try/except statement in case the user hadn't registered yet so it wouldn't throw an error
     try:
 
-        with open(r"C:\PastebinGUI\userinfo.txt", "r") as userInfo:
+        with open(path, "r") as userInfo:
 
             userInfoList = userInfo.readlines()
 
@@ -66,6 +71,7 @@ def registerFun():
             passwordStringVar.set(userInfoList[1])
             devKeyStringVar.set(userInfoList[2])
 
+    # Sets the values of the variables if the user hasn't registered
     except:
 
         usernameStringVar.set("")
@@ -74,25 +80,24 @@ def registerFun():
 
     usernameLabel = Label(registerWin, text="Username: ")
     usernameLabel.grid(row=0, column=0)
-    # devKeyEntry["textvariable"] = devKey
 
     usernameEntry = Entry(registerWin)
     usernameEntry.grid(row=0, column=1)
-    usernameEntry["textvariable"] = usernameStringVar
+    usernameEntry["textvariable"] = usernameStringVar # Autofills the username box
 
     passwordLabel = Label(registerWin, text="Password: ")
     passwordLabel.grid(row=1, column=0)
 
     passwordEntry = Entry(registerWin)
     passwordEntry.grid(row=1, column=1)
-    passwordEntry["textvariable"] = passwordStringVar
+    passwordEntry["textvariable"] = passwordStringVar # Autofills the password box
 
     devKeyLabel = Label(registerWin, text="Developer Key: ")
     devKeyLabel.grid(row=2, column=0)
 
     devKeyEntry = Entry(registerWin)
     devKeyEntry.grid(row=2, column=1)
-    devKeyEntry["textvariable"] = devKeyStringVar
+    devKeyEntry["textvariable"] = devKeyStringVar # Autofills the developer key box
 
     devKeyHelp = Button(registerWin, text="Need help getting developer key?", command=devKeyHelpFun)
     devKeyHelp.grid(row=2, column=2)
@@ -103,35 +108,40 @@ def registerFun():
     backButton = Button(registerWin, text="Back", command=registerWin.destroy)
     backButton.grid(row=3, column=2)
 
-
+# Function opens the window to submit a paste
 def pasteFun():
 
     pasteWin = Toplevel(root)
 
+    # Opens a url in the webbrowser for hyperlinks
     def callback(url):
 
         webbrowser.open_new(urlLabel["text"])
 
     def selectFileFun():
 
+        # Opens a dialogue box and returns the file path and file name selected by the user
         filePath = filedialog.askopenfilename()
 
         with open(filePath, "r") as pasteFile:
 
+            # Reads the contents of the file and stores it to be submitted in a paste
             selectFileFun.pasteContent = pasteFile.read()
 
     def submitPasteFun():
 
-        with open(r"C:\PastebinGUI\userinfo.txt", "r+") as userInfo:
+        with open(path, "r+") as userInfo:
 
             userInfoList = userInfo.readlines()
 
+            # Assembles all the data used to log the user in
             login_data = {
                 'api_dev_key': userInfoList[2].strip(),
                 'api_user_name': userInfoList[0].strip(),
                 'api_user_password': userInfoList[1].strip()
             }
 
+            # Assembles all the data to submit a new paste
             data = {
                 'api_option': 'paste',
                 'api_dev_key': userInfoList[2],
@@ -142,14 +152,16 @@ def pasteFun():
                 'api_paste_format': None if pasteTypeEntry.get() == "" else pasteTypeEntry.get()
             }
 
-            login = requests.post("https://pastebin.com/api/api_login.php", data=login_data)
-            data['api_user_key'] = login.text
+            login = requests.post("https://pastebin.com/api/api_login.php", data=login_data) # Logs the user in to get the user key
+            data['api_user_key'] = login.text # Sets the user key in the data dictionary
 
-            r = requests.post("https://pastebin.com/api/api_post.php", data=data)
-            url = r.text
+            r = requests.post("https://pastebin.com/api/api_post.php", data=data) # Submits the post
+            url = r.text # Stores the response
 
-            urlLabel["text"] = url
+            # TODO: Handle non-url responses from server
+            urlLabel["text"] = url # Sets the text of urlLabel to the response from the server
 
+    # Lambda wasn't working so I made another function to handle one specific hyperlink
     def pasteTypeHyperlinkFun(event):
 
         webbrowser.open_new("https://pastebin.com/doc_api#5")
@@ -159,9 +171,10 @@ def pasteFun():
 
     devKey = StringVar()
 
+    # Try/except statement used in case user hasn't registered
     try:
 
-        with open(r"C:\PastebinGUI\userinfo.txt", "r") as userInfo:
+        with open(path, "r") as userInfo:
 
             userInfoList = userInfo.readlines()
             devKey.set(userInfoList[2])
@@ -172,7 +185,7 @@ def pasteFun():
 
     devKeyEntry = Entry(pasteWin)
     devKeyEntry.grid(row=0, column=1)
-    devKeyEntry["textvariable"] = devKey
+    devKeyEntry["textvariable"] = devKey # Auto fills developer key box
 
     selectFileButton = Button(pasteWin, text="Select file", command=selectFileFun)
     selectFileButton.grid(row=0, column=2, columnspan=2)
@@ -194,7 +207,7 @@ def pasteFun():
 
     pasteTypeHyperlink = Label(pasteWin, text="See more here", fg="blue", cursor="hand2")
     pasteTypeHyperlink.grid(row=2, column=2, columnspan=2)
-    pasteTypeHyperlink.bind("<Button-1>", pasteTypeHyperlinkFun)
+    pasteTypeHyperlink.bind("<Button-1>", pasteTypeHyperlinkFun) # Hyperlink to open different paste formats
 
     pastePrivacyLabel = Label(pasteWin, text="Paste privacy")
     pastePrivacyLabel.grid(row=3, column=0, sticky="W")
@@ -225,13 +238,15 @@ def pasteFun():
     
     urlLabel = Label(pasteWin, text="", fg="blue", cursor="hand2")
     urlLabel.grid(row=3, column=2, rowspan=6, columnspan=2)
-    urlLabel.bind("<Button-1>", callback)
+    urlLabel.bind("<Button-1>", callback) # Hyperlink to open the url if the paste was sucessful
 
 
+# Opens window to get a paste
 def getFun():
 
     getWin = Toplevel(root)
 
+    # Gets the directory for the text file paste to be stored in
     def getDirFun():
         
         global filePath
@@ -239,19 +254,37 @@ def getFun():
     
     def getPasteFun(filePath):
 
-        pasteContent = sp.getoutput(f"pastebin get {keyEntry.get()}")
+        # TODO: swap this with api (using https://pastebin.com/raw/KEY) instead of using cmd
+        pasteContent = sp.getoutput(f"pastebin get {keyEntry.get()}") # Uses the cmd to return the paste (given the paste key)
 
         print(filePath)
 
         with open(os.path.join(filePath, fileNameEntry.get() + ".txt"), "w+") as outputTextFile:
 
-            outputTextFile.write(pasteContent)
+            outputTextFile.write(pasteContent) # Writes the paste to a text file
+
+    # Opens the user info
+    with open(path, "r+") as userInfo:
+
+        userInfoList = userInfo.readlines()
+    
+    keyVar = StringVar()
+
+    # Try/except statement used in case user hasn't registered
+    try:
+
+        keyVar.set(userInfoList[2])
+    
+    except:
+
+        keyVar.set("")
 
     keyLabel = Label(getWin, text="Key:")
     keyLabel.grid(row=0, column=0)
 
     keyEntry = Entry(getWin)
     keyEntry.grid(row=0, column=1)
+    keyEntry["textvariable"] = keyVar # Auto fill key box
 
     fileNameLabel = Label(getWin, text="File name:")
     fileNameLabel.grid(row=1, column=0)
@@ -265,7 +298,6 @@ def getFun():
     getPasteButton = Button(getWin, text="Get paste", command=lambda: getPasteFun(filePath))
     getPasteButton.grid(row=2, column=1)
 
-# output = sp.getoutput("pastebin get VEA8sQXN")
 root = Tk()
 
 registerButton = Button(root, text="Register", command=registerFun)
@@ -281,16 +313,16 @@ root.mainloop()
 
 if __name__ == "__main__":
 
+    # Tries to open the file holding the user data
     try:
 
-        with open(r"C:\PastebinGUI\userinfo.txt", "r"):
+        with open(path, "r"):
 
             pass
     
+    # If that fails (userInfo.txt doesn't exist) it creates userInfo
     except:
 
-        with open(r"C:\PastebinGUI\userinfo.txt", "r+"):
+        with open(path, "r+"):
 
             pass
-
-    
